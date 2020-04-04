@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  NotificationEmail:
+    Type: String
+  SiteUrl:
+    Type: String
+  NumberOfRuns:
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    Default: 3
+  SlackApiToken:
+    Type: String
+    Description: Slack API token
+  SlackDefaultChannel:
+    Type: String
+    Description: Slack channel to publish to.
+    Default: notifications
+  SnsPublishResponse:
+    Type: String
+    Description: Whether or not to publish function response to Sns
+    Default: 'false'
+    AllowedValues:
+      - true
+      - false
+Resources:
+  CheckWebsitePeriodically:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda/index.handler
+      Runtime: nodejs12.x
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
+      Environment:
+        Variables:
+          URL: !Ref SiteUrl
+          NUMBER_OF_AUDITS: !Ref NumberOfRuns
+      MemorySize: 1024
+      Timeout: 120
+      Events:
+        CheckWebsiteScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
+  Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CheckWebsitePeriodically
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: '9'
+
+  awssnstoslackpublisher:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:641494176294:applications/aws-sns-to-slack-publisher
+        SemanticVersion: 1.0.1
+      Parameters:
+        # Slack API token
+        SlackApiToken:
+          Ref: SlackApiToken
+        # Slack channel to publish to.
+        # SlackDefaultChannel: 'notifications' # Uncomment to override default value
+        # Whether or not to publish function response to Sns
+        # SnsPublishResponse: 'false' # Uncomment to override default value
+        # Name of the CloudFormation export with the Sns topic ARN to subscribe to
+        SnsPublisherTopicExport: !Ref AlarmTopic
