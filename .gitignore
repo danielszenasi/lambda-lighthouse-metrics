@@ -1,5 +1,4 @@
 node_modules
 environment.json
 .aws-sam
-package-lock.json
 samconfig.toml
