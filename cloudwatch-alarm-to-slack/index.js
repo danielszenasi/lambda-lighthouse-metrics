@@ -121,7 +121,8 @@ exports.handler = (event, context, callback) => {
     kmsEncryptedHookUrl &&
     kmsEncryptedHookUrl !== '<kmsEncryptedHookUrl>'
   ) {
-    const encryptedBuf = new Buffer(kmsEncryptedHookUrl, 'base64');
+    const encryptedBuf = Buffer.from(kmsEncryptedHookUrl, 'base64');
+
     const cipherText = { CiphertextBlob: encryptedBuf };
 
     const kms = new AWS.KMS();

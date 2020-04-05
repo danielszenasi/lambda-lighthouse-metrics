@@ -42,16 +42,7 @@ const chromeFlags = [
 ];
 
 exports.handler = async function createLighthouse() {
-  // const metrics = await audits();
-
-  const metrics = {
-    firstContentfulPaint: Math.random * 10,
-    firstMeaningfulPaint: Math.random * 10,
-    firstCPUIdle: Math.random * 10,
-    interactive: Math.random * 10,
-    speedIndex: Math.random * 10,
-    observedLastVisualChange: Math.random * 10,
-  };
+  const metrics = await audits();
 
   const MetricData = Object.entries(metrics)
     .filter(([id]) => titles[id])
@@ -68,7 +59,7 @@ async function audits() {
   let metricsResults = {};
   const runs = process.env.NUMBER_OF_AUDITS;
   for (i = 0; i < runs; i++) {
-    const metricsValues = await performLighthouseAudit(chromePath);
+    const metricsValues = await launchChromeAndRunLighthouse(chromePath);
     const id = metricsValues.firstCPUIdle;
     metricsResults = {
       ...metricsResults,
@@ -78,7 +69,7 @@ async function audits() {
   return findMedianRun(metricsResults);
 }
 
-async function performLighthouseAudit(chromePath) {
+async function launchChromeAndRunLighthouse(chromePath) {
   let chrome;
   try {
     chrome = await chromeLauncher.launch({
@@ -131,7 +122,7 @@ function publishMetrics(MetricData) {
 function getMetric([id, timing]) {
   return {
     MetricName: titles[id],
-    Value: Math.max(0, timing / 1000),
+    Value: Math.max(0, timing),
     Dimensions: [
       {
         Name: 'Url',

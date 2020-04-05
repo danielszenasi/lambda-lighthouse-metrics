@@ -12,15 +12,49 @@ Parameters:
     Default: 3
   KeyIdParameter:
     Type: String
-  slackChannelParameter:
+  SlackChannelParameter:
     Type: String
-  kmsEncryptedHookUrlParameter:
+  KmsEncryptedHookUrlParameter:
     Type: String
+  FirstMeaningfulPaintThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 3000
+  FirstContentfulPaintThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 2000
+  FirstCPUIdleThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 0
+  InteractiveThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 0
+  SpeedIndexThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 0
+  ObservedLastVisualChangeThreshold:
+    Type: Number
+    MinValue: 0
+    Default: 0
+
+Conditions:
+  FirstMeaningfulPaint: !Not [!Equals [!Ref FirstMeaningfulPaintThreshold, 0]]
+  FirstContentfulPaint: !Not [!Equals [!Ref FirstContentfulPaintThreshold, 0]]
+  FirstCPUIdle: !Not [!Equals [!Ref FirstCPUIdleThreshold, 0]]
+  Interactive: !Not [!Equals [!Ref InteractiveThreshold, 0]]
+  SpeedIndex: !Not [!Equals [!Ref SpeedIndexThreshold, 0]]
+  ObservedLastVisualChange:
+    !Not [!Equals [!Ref ObservedLastVisualChangeThreshold, 0]]
 Resources:
-  CheckWebsitePeriodically:
+  RunLighthousePeriodically:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: lambda/index.handler
+      Handler: index.handler
+      CodeUri: ./lighthouse
       Runtime: nodejs12.x
       Policies:
         - CloudWatchPutMetricPolicy: {}
@@ -31,10 +65,10 @@ Resources:
       MemorySize: 1024
       Timeout: 120
       Events:
-        CheckWebsiteScheduledEvent:
+        RunLighthouseScheduledEvent:
           Type: Schedule
           Properties:
-            Schedule: rate(1 minute)
+            Schedule: rate(3 hours)
 
   AlarmTopic:
     Type: AWS::SNS::Topic
@@ -43,28 +77,120 @@ Resources:
         - Protocol: email
           Endpoint: !Ref NotificationEmail
 
-  Alarm:
+  FirstMeaningfulPaintAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: FirstMeaningfulPaint
     Properties:
+      AlarmName: FirstMeaningfulPaintAlarm
       AlarmActions:
         - !Ref AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref CheckWebsitePeriodically
+        - Name: Url
+          Value: !Ref SiteUrl
       EvaluationPeriods: 1
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 60
       Statistic: Maximum
-      Threshold: '9'
+      Threshold: !Ref FirstMeaningfulPaintThreshold
 
-  cloudwatchalarmtoslack:
+  FirstContentfulPaintAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: FirstContentfulPaint
+    Properties:
+      AlarmName: FirstContentfulPaintAlarm
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Url
+          Value: !Ref SiteUrl
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref FirstContentfulPaintThreshold
+
+  FirstCPUIdleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: FirstCPUIdle
+    Properties:
+      AlarmName: FirstCPUIdleAlarm
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Url
+          Value: !Ref SiteUrl
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref FirstCPUIdleThreshold
+
+  InteractiveAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: Interactive
+    Properties:
+      AlarmName: InteractiveAlarm
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Url
+          Value: !Ref SiteUrl
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref InteractiveThreshold
+
+  SpeedIndexAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: SpeedIndex
+    Properties:
+      AlarmName: SpeedIndexAlarm
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Url
+          Value: !Ref SiteUrl
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref SpeedIndexThreshold
+
+  ObservedLastVisualChangeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ObservedLastVisualChange
+    Properties:
+      AlarmName: ObservedLastVisualChangeAlarm
+      AlarmActions:
+        - !Ref AlarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Url
+          Value: !Ref SiteUrl
+      EvaluationPeriods: 1
+      MetricName: First Meaningful Paint
+      Namespace: Lighthouse
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref ObservedLastVisualChangeThreshold
+
+  CloudWatchAlarmToSlack:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: cloudwatch-alarm-to-slack/index.handler
+      Handler: index.handler
       Runtime: nodejs12.x
-      CodeUri: .
+      CodeUri: ./cloudwatch-alarm-to-slack
       Description: >-
         An Amazon SNS trigger that sends CloudWatch alarm notifications to
         Slack.
@@ -81,5 +207,5 @@ Resources:
               Ref: AlarmTopic
       Environment:
         Variables:
-          slackChannel: slackChannelParameter
-          kmsEncryptedHookUrl: kmsEncryptedHookUrlParameter
+          slackChannel: !Ref SlackChannelParameter
+          kmsEncryptedHookUrl: !Ref KmsEncryptedHookUrlParameter
