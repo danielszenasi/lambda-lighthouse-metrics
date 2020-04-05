@@ -10,20 +10,12 @@ Parameters:
     MinValue: 1
     MaxValue: 10
     Default: 3
-  SlackApiToken:
+  KeyIdParameter:
     Type: String
-    Description: Slack API token
-  SlackDefaultChannel:
+  slackChannelParameter:
     Type: String
-    Description: Slack channel to publish to.
-    Default: notifications
-  SnsPublishResponse:
+  kmsEncryptedHookUrlParameter:
     Type: String
-    Description: Whether or not to publish function response to Sns
-    Default: 'false'
-    AllowedValues:
-      - true
-      - false
 Resources:
   CheckWebsitePeriodically:
     Type: AWS::Serverless::Function
@@ -67,19 +59,27 @@ Resources:
       Statistic: Maximum
       Threshold: '9'
 
-  awssnstoslackpublisher:
-    Type: AWS::Serverless::Application
+  cloudwatchalarmtoslack:
+    Type: 'AWS::Serverless::Function'
     Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:641494176294:applications/aws-sns-to-slack-publisher
-        SemanticVersion: 1.0.1
-      Parameters:
-        # Slack API token
-        SlackApiToken:
-          Ref: SlackApiToken
-        # Slack channel to publish to.
-        # SlackDefaultChannel: 'notifications' # Uncomment to override default value
-        # Whether or not to publish function response to Sns
-        # SnsPublishResponse: 'false' # Uncomment to override default value
-        # Name of the CloudFormation export with the Sns topic ARN to subscribe to
-        SnsPublisherTopicExport: !Ref AlarmTopic
+      Handler: cloudwatch-alarm-to-slack/index.handler
+      Runtime: nodejs12.x
+      CodeUri: .
+      Description: >-
+        An Amazon SNS trigger that sends CloudWatch alarm notifications to
+        Slack.
+      MemorySize: 128
+      Timeout: 3
+      Policies:
+        - KMSDecryptPolicy:
+            KeyId: !Ref KeyIdParameter
+      Events:
+        SNS1:
+          Type: SNS
+          Properties:
+            Topic:
+              Ref: AlarmTopic
+      Environment:
+        Variables:
+          slackChannel: slackChannelParameter
+          kmsEncryptedHookUrl: kmsEncryptedHookUrlParameter

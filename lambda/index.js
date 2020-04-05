@@ -42,16 +42,16 @@ const chromeFlags = [
 ];
 
 exports.handler = async function createLighthouse() {
-  const metrics = await audits();
+  // const metrics = await audits();
 
-  // const metrics = {
-  //   firstContentfulPaint: Math.random * 10,
-  //   firstMeaningfulPaint: Math.random * 10,
-  //   firstCPUIdle: Math.random * 10,
-  //   interactive: Math.random * 10,
-  //   speedIndex: Math.random * 10,
-  //   observedLastVisualChange: Math.random * 10,
-  // };
+  const metrics = {
+    firstContentfulPaint: Math.random * 10,
+    firstMeaningfulPaint: Math.random * 10,
+    firstCPUIdle: Math.random * 10,
+    interactive: Math.random * 10,
+    speedIndex: Math.random * 10,
+    observedLastVisualChange: Math.random * 10,
+  };
 
   const MetricData = Object.entries(metrics)
     .filter(([id]) => titles[id])
