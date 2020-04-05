@@ -19,11 +19,11 @@ Parameters:
   FirstMeaningfulPaintThreshold:
     Type: Number
     MinValue: 0
-    Default: 3000
+    Default: 3
   FirstContentfulPaintThreshold:
     Type: Number
     MinValue: 0
-    Default: 2000
+    Default: 2
   FirstCPUIdleThreshold:
     Type: Number
     MinValue: 0
@@ -88,10 +88,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref FirstMeaningfulPaintThreshold
 
@@ -106,10 +106,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref FirstContentfulPaintThreshold
 
@@ -124,10 +124,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref FirstCPUIdleThreshold
 
@@ -142,10 +142,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref InteractiveThreshold
 
@@ -160,10 +160,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref SpeedIndexThreshold
 
@@ -178,10 +178,10 @@ Resources:
       Dimensions:
         - Name: Url
           Value: !Ref SiteUrl
-      EvaluationPeriods: 1
+      EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
-      Period: 60
+      Period: 3600
       Statistic: Maximum
       Threshold: !Ref ObservedLastVisualChangeThreshold
 

@@ -122,7 +122,7 @@ function publishMetrics(MetricData) {
 function getMetric([id, timing]) {
   return {
     MetricName: titles[id],
-    Value: Math.max(0, timing),
+    Value: Math.max(0, timing / 1000),
     Dimensions: [
       {
         Name: 'Url',
