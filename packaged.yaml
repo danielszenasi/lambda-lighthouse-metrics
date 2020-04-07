@@ -40,24 +40,48 @@ Parameters:
     Type: Number
     MinValue: 0
     Default: 0
-
 Conditions:
-  FirstMeaningfulPaint: !Not [!Equals [!Ref FirstMeaningfulPaintThreshold, 0]]
-  FirstContentfulPaint: !Not [!Equals [!Ref FirstContentfulPaintThreshold, 0]]
-  FirstCPUIdle: !Not [!Equals [!Ref FirstCPUIdleThreshold, 0]]
-  Interactive: !Not [!Equals [!Ref InteractiveThreshold, 0]]
-  SpeedIndex: !Not [!Equals [!Ref SpeedIndexThreshold, 0]]
+  FirstMeaningfulPaint:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: FirstMeaningfulPaintThreshold
+      - 0
+  FirstContentfulPaint:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: FirstContentfulPaintThreshold
+      - 0
+  FirstCPUIdle:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: FirstCPUIdleThreshold
+      - 0
+  Interactive:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: InteractiveThreshold
+      - 0
+  SpeedIndex:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: SpeedIndexThreshold
+      - 0
   ObservedLastVisualChange:
-    !Not [!Equals [!Ref ObservedLastVisualChangeThreshold, 0]]
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: ObservedLastVisualChangeThreshold
+      - 0
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: lighthouse-metrics
-    Description: Run Google Chrome Lighthouse on AWS Lambda and and publishes the results as CloudWatch metrics
+    Description: Run Google Chrome Lighthouse on AWS Lambda and and publishes the
+      results as CloudWatch metrics
     Author: Daniel Szenasi
     SpdxLicenseId: Apache-2.0
-    LicenseUrl: LICENSE.txt
-    ReadmeUrl: README.md
-    Labels: ['lighthouse']
+    LicenseUrl: s3://lighthouse-metrics-sar/dccb8cfd068b1021fcc401746d63165a
+    ReadmeUrl: s3://lighthouse-metrics-sar/7d77f93a0d2d1f433bcab684234afe2b
+    Labels:
+    - lighthouse
     HomePageUrl: https://github.com/danielszenasi/lambda-lighthouse-metrics
     SemanticVersion: 0.0.1
     SourceCodeUrl: https://github.com/danielszenasi/lambda-lighthouse-metrics
@@ -66,14 +90,16 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      CodeUri: ./lighthouse
+      CodeUri: s3://lighthouse-metrics-sar/4fb22a4dd151603f334c28eb8fd3c5e7
       Runtime: nodejs12.x
       Policies:
-        - CloudWatchPutMetricPolicy: {}
+      - CloudWatchPutMetricPolicy: {}
       Environment:
         Variables:
-          URL: !Ref SiteUrl
-          NUMBER_OF_AUDITS: !Ref NumberOfRuns
+          URL:
+            Ref: SiteUrl
+          NUMBER_OF_AUDITS:
+            Ref: NumberOfRuns
       MemorySize: 1024
       Timeout: 120
       Events:
@@ -81,136 +107,141 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(3 hours)
-
   AlarmTopic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Protocol: email
-          Endpoint: !Ref NotificationEmail
-
+      - Protocol: email
+        Endpoint:
+          Ref: NotificationEmail
   FirstMeaningfulPaintAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: FirstMeaningfulPaint
     Properties:
       AlarmName: FirstMeaningfulPaintAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref FirstMeaningfulPaintThreshold
-
+      Threshold:
+        Ref: FirstMeaningfulPaintThreshold
   FirstContentfulPaintAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: FirstContentfulPaint
     Properties:
       AlarmName: FirstContentfulPaintAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref FirstContentfulPaintThreshold
-
+      Threshold:
+        Ref: FirstContentfulPaintThreshold
   FirstCPUIdleAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: FirstCPUIdle
     Properties:
       AlarmName: FirstCPUIdleAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref FirstCPUIdleThreshold
-
+      Threshold:
+        Ref: FirstCPUIdleThreshold
   InteractiveAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: Interactive
     Properties:
       AlarmName: InteractiveAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref InteractiveThreshold
-
+      Threshold:
+        Ref: InteractiveThreshold
   SpeedIndexAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: SpeedIndex
     Properties:
       AlarmName: SpeedIndexAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref SpeedIndexThreshold
-
+      Threshold:
+        Ref: SpeedIndexThreshold
   ObservedLastVisualChangeAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: ObservedLastVisualChange
     Properties:
       AlarmName: ObservedLastVisualChangeAlarm
       AlarmActions:
-        - !Ref AlarmTopic
+      - Ref: AlarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
-        - Name: Url
-          Value: !Ref SiteUrl
+      - Name: Url
+        Value:
+          Ref: SiteUrl
       EvaluationPeriods: 2
       MetricName: First Meaningful Paint
       Namespace: Lighthouse
       Period: 3600
       Statistic: Maximum
-      Threshold: !Ref ObservedLastVisualChangeThreshold
-
+      Threshold:
+        Ref: ObservedLastVisualChangeThreshold
   CloudWatchAlarmToSlack:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
       Runtime: nodejs12.x
-      CodeUri: ./cloudwatch-alarm-to-slack
-      Description: >-
-        An Amazon SNS trigger that sends CloudWatch alarm notifications to
-        Slack.
+      CodeUri: s3://lighthouse-metrics-sar/e950251ae0c8257dd9724f98c9a1e852
+      Description: An Amazon SNS trigger that sends CloudWatch alarm notifications
+        to Slack.
       MemorySize: 128
       Timeout: 3
       Policies:
-        - KMSDecryptPolicy:
-            KeyId: !Ref KeyIdParameter
+      - KMSDecryptPolicy:
+          KeyId:
+            Ref: KeyIdParameter
       Events:
         SNS1:
           Type: SNS
@@ -219,5 +250,7 @@ Resources:
               Ref: AlarmTopic
       Environment:
         Variables:
-          slackChannel: !Ref SlackChannelParameter
-          kmsEncryptedHookUrl: !Ref KmsEncryptedHookUrlParameter
+          slackChannel:
+            Ref: SlackChannelParameter
+          kmsEncryptedHookUrl:
+            Ref: KmsEncryptedHookUrlParameter
